@@ -18,6 +18,7 @@ BouncingThing::BouncingThing (Vector2f position, float radius, int numberOfPoint
 	m_shape = ConvexShape(numberOfPoints);
 	m_points.reserve(numberOfPoints);
 	m_id = id;
+	m_radius = radius;
 	
 	//The points will all lie on an imaginary circumference.
 	//We will use this angle with the function getPointAtRadius(...) to calculate each point of our shape.
@@ -55,10 +56,22 @@ void BouncingThing::Update(const RenderWindow &w) {
 	m_centrePos += m_velocity;
 	m_shape.setPosition(m_centrePos);
 
-	if(m_centrePos.x >= w.getSize().x || m_centrePos.x <= 0)
+	//keep the object on the screen
+	/*if(m_centrePos.x >= w.getSize().x || m_centrePos.x <= 0)
 		m_velocity.x *= -1;
 	if(m_centrePos.y >= w.getSize().y || m_centrePos.y <= 0)
+		m_velocity.y *= -1;*/
+	//updated to stop object getting stuck and jittering on the edge of the screen
+
+	if((m_centrePos.x >= w.getSize().x && m_velocity.x > 0)
+		|| (m_centrePos.x <= 0 && m_velocity.x < 0))
+		m_velocity.x *= -1;
+
+	if((m_centrePos.y >= w.getSize().y && m_velocity.y > 0)
+		|| (m_centrePos.y <= 0 && m_velocity.y < 0))
 		m_velocity.y *= -1;
+
+	checkedIDs.clear();	//clear for next round of collision tests
 }
 void BouncingThing::Draw(RenderWindow &w) const {
 	w.draw(m_shape);
@@ -157,4 +170,27 @@ Vector2f BouncingThing::projectOntoAxis(Vector2f axis) const {
 
 	Vector2f proj = Vector2f(min, max);
 	return proj;
+}
+
+bool BouncingThing::wasCollisionTested(int id) {
+
+	std::vector<int>::iterator itr;
+	//search for the id in the vector
+	itr = std::find(checkedIDs.begin(), checkedIDs.end(), id);
+
+	//if an id was found, return true (we have already checked this)
+	return itr == checkedIDs.end() ? false : true;
+}
+
+void BouncingThing::setCollisionTested(int id) {
+	checkedIDs.push_back(id);
+}
+
+bool BouncingThing::intersectsBoundingCircle(BouncingThing const &A) {
+
+	//Euclidean distance formula
+	float distance = sqrt( pow( (m_centrePos.x - A.getPosition().x) + (m_centrePos.y - A.getPosition().y), 2) );
+	float radii = m_radius + A.getRadius();
+	
+	return distance <= radii ? true : false;
 }

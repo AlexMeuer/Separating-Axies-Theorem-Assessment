@@ -43,12 +43,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>C:\SFML-2.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SFML_SDK)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\SFML-2.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SFML_SDK)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /d /y "$(SFML_SDK)\bin\*.*" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -67,12 +70,16 @@
     <ClCompile Include="BouncingThing.cpp" />
     <ClCompile Include="CollisionDetection.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Square.cpp" />
+    <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="Triangle.cpp" />
-    <ClCompile Include="Triangle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BouncingThing.h" />
     <ClInclude Include="CollisionDetection.h" />
+    <ClInclude Include="QuadTree.h" />
+    <ClInclude Include="Square.h" />
+    <ClInclude Include="Triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

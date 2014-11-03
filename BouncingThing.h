@@ -15,6 +15,7 @@ protected:
 	ConvexShape m_shape;
 
 	int m_id;
+	std::vector<int> checkedIDs;	//used in collision optimization (to make any pair of objects is tested for collision at most once per frame)
 
 	BouncingThing(int numberOfPoints);	//for derived classes only
 
@@ -42,5 +43,8 @@ public:
 	//static Vector2f CheckCollisionSAT(const BouncingThing &A, const BouncingThing &B);
 	std::vector<Vector2f> getAxies() const;	//get the axies for SAT
 	Vector2f projectOntoAxis(Vector2f axis) const;
+	bool wasCollisionTested(int id);
+	void setCollisionTested(int id);
+	bool intersectsBoundingCircle(BouncingThing const &A);
 };
 #endif

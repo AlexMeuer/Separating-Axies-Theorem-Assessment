@@ -23,20 +23,31 @@
 #include <vector>
 
 //#include "Circle.h"
-//#include "Triangle.h"
-#include "BouncingThing.h"
+//#include "BouncingThing.h"
+#include "Triangle.h"
+#include "Square.h"
 #include "CollisionDetection.h"
 
 using namespace std;
 
-float distance(Vector2f const &A, Vector2f const &B)
-{
-	return sqrt( pow( (B.x - A.x) + (B.y - A.y), 2) );
-}
+//float euclideanDistance(Vector2f const &A, Vector2f const &B)
+//{
+//	return sqrt( pow( (B.x - A.x) + (B.y - A.y), 2) );
+//}
+
+//double vectorDotProduct(const Vector2f &A, const Vector2f &B) {
+//	return (A.x * B.x) + (A.y * B.y);
+//}
+//
+//Vector2f vectorNormalize(const Vector2f &V) {
+//	float magnitude = sqrt((V.x * V.x) + (V.y * V.y));
+//
+//	return V / magnitude;
+//}
  
  
 ////////////////////////////////////////////////////////////
-///Entrypoint of application
+///Entry point of application
 ////////////////////////////////////////////////////////////
  
 int main()
@@ -45,7 +56,7 @@ int main()
 
 	// Create the main window
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
-	window.setFramerateLimit(150);
+	window.setFramerateLimit(60);
 
 	//load a font
 	sf::Font font;
@@ -59,7 +70,7 @@ int main()
 	text.setPosition(5,5);
 	text.setCharacterSize(20);
 
-	//calculate framerate
+	//calculate frame rate
 	sf::Clock clock;
 	clock.restart();
 	float framerate;
@@ -87,7 +98,12 @@ int main()
 
 	for ( int i = 0; i < maxThings; i++ ) {
 		//create a bouncing thing with randomized parameters
-		bouncingThings.push_back(BouncingThing(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, rand() % 5 + 3, id++));
+		//bouncingThings.push_back(BouncingThing(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, rand() % 5 + 3, id++));
+		//bouncingThings.push_back(BouncingThing(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 15 + 15, 100, id++));
+		if ( i % 2 )
+			bouncingThings.push_back(Triangle(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, id++));
+		else
+			bouncingThings.push_back(Square(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, id++));
 	}
 	//vector<Vector2f> myVec;
 	//myVec.push_back(Vector2f(15,15));
@@ -153,60 +169,70 @@ int main()
 		//jenkins.Update(window);
 		//jenkins.Draw(window);
 
-		//vector to keep track of which objects we've tested;
-		vector<pair<BouncingThing*, BouncingThing*>> testedPairs;
-		vector<pair<BouncingThing*, BouncingThing*>>::iterator testedItr;
-
 		for(std::vector<BouncingThing>::iterator itr = bouncingThings.begin();
 			itr != bouncingThings.end();
 			itr++)
 		{
-			//collision detectiong
+			//collision detection
 			for(std::vector<BouncingThing>::iterator itr2 = bouncingThings.begin();
 				itr2 != bouncingThings.end();
 				itr2++)
 			{
 				if(itr != itr2)	//don't let it check against itself!
 				{
-					if ( distance(itr->getPosition(), itr2->getPosition())
-						< itr->getRadius() + itr2->getRadius() )
+					//If these two object were already tested against each other...
+					if ( itr->wasCollisionTested(itr2->getID())
+							|| itr2->wasCollisionTested(itr->getID()) )
+					{
+							continue;	//...we've already checked these for collision, skip 'em
+					}
+
+					//check if their bounding circles intersect
+					if(itr->intersectsBoundingCircle(*itr2))
 					{
 						//check whether we've already tested collision between itr and itr2
-						bool alreadyChecked = false;
-						//for( testedItr = testedPairs.begin(); testedItr != testedPairs.end(); testedItr++ )
+						//bool alreadyChecked = false;
+
+						//if ( itr->wasCollisionTested(itr2->getID())
+						//	|| itr2->wasCollisionTested(itr->getID()) )
 						//{
-						//	//this will never happen
-						//	/*if ( itr->getID() == testedItr->first->getID()
-						//		&& itr2->getID() == testedItr->second->getID() ) {
-						//		alreadyChecked = true;
-						//		break;
-						//	}*/
-
-						//	if ( itr2->getID() == testedItr->first->getID()
-						//		&& itr->getID() == testedItr->second->getID() ) {
-						//		alreadyChecked = true;
-						//		break;
-						//	}
+							//alreadyChecked = true;
+						//	continue;	//we've already checked these for collision, skip 'em
 						//}
-
 						//if we've already done collision check, don't check again.
-						if ( alreadyChecked )
-							continue;
+						/*if ( alreadyChecked )
+							continue;*/
 
 						//check if they collide...
 						pair<bool, Vector2f> pair = CollisionDetection::CheckCollisionSAT(*itr, *itr2);
 
-						if( pair.first ) {
+						if( pair.first) {
 							//...do something if they collide
 							itr->setPosition(itr->getPosition() + (pair.second / 2.0f));	//move them apart so they're not intersecting
-							itr2->setPosition(itr2->getPosition() + (pair.second / -2.0f));	//(using the minimum translation vector)
+							itr2->setPosition(itr2->getPosition() - (pair.second / 2.0f));	//(using the minimum translation vector)
 
-							Vector2f swap = itr->getVelocity();
+							/*Vector2f swap = itr->getVelocity();
 							itr->setVelocity(itr2->getVelocity());
-							itr2->setVelocity(swap);
+							itr2->setVelocity(swap);*/
+
+							if( pair.second != Vector2f(0,0) ) {
+
+							//get the components of the velocity vectors which are parallel to the collision
+							float magnitude = sqrtf((pair.second.x * pair.second.x) + (pair.second.y * pair.second.y));
+							Vector2f normMTV(pair.second / magnitude);
+
+							//dot product
+							float aci = (itr->getVelocity().x * normMTV.x) + (itr->getVelocity().y * normMTV.y);
+							float bci = (itr2->getVelocity().x * normMTV.x) + (itr2->getVelocity().y * normMTV.y);
+
+							itr->setVelocity(itr->getVelocity() + (bci - aci) * normMTV);
+							itr2->setVelocity(itr2->getVelocity() + (aci - bci) * normMTV);
+							}
 						}
 
-						testedPairs.push_back(make_pair(&*itr, &*itr2));
+						//add IDs to appropriate lists so that we don't check for collision again.
+						itr->setCollisionTested(itr2->getID());
+						itr2->setCollisionTested(itr->getID());
 					}//if(distance)
 				}//if(itr!=itr2)
 			}//itr2 loop

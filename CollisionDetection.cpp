@@ -23,12 +23,24 @@ std::pair<bool, double> CollisionDetection::checkOverlap(const Vector2f &A, cons
 }
 
 
+double dotProduct(const Vector2f &A, const Vector2f &B) {
+	return (A.x * B.x) + (A.y * B.y);
+}
+
+Vector2f vectorNormalize(const Vector2f &V) {
+	float magnitude = sqrt((V.x * V.x) + (V.y * V.y));
+
+	return V / magnitude;
+}
+
+
 std::pair<bool, Vector2f> CollisionDetection::CheckCollisionSAT(const BouncingThing & A, const BouncingThing & B)
 {
 	double overlap = DBL_MAX;	//maximum value for type double
 	Vector2f smallest;
 	std::vector<Vector2f> axies1 = A.getAxies();
 	std::vector<Vector2f> axies2 = B.getAxies();
+	Vector2f p1, p2;
 
 	//iterate through axies1
 	for (std::vector<Vector2f>::iterator itr = axies1.begin();
@@ -38,8 +50,8 @@ std::pair<bool, Vector2f> CollisionDetection::CheckCollisionSAT(const BouncingTh
 		Vector2f axis = *itr;
 
 		//project both shapes onto the axis
-		Vector2f p1 = A.projectOntoAxis(axis);
-		Vector2f p2 = B.projectOntoAxis(axis);
+		p1 = A.projectOntoAxis(axis);
+		p2 = B.projectOntoAxis(axis);
 
 		std::pair<bool, double> result = checkOverlap(p1, p2);
 
@@ -64,8 +76,8 @@ std::pair<bool, Vector2f> CollisionDetection::CheckCollisionSAT(const BouncingTh
 		Vector2f axis = *itr;
 
 		//project both shapes onto the axis
-		Vector2f p1 = A.projectOntoAxis(axis);
-		Vector2f p2 = B.projectOntoAxis(axis);
+		p1 = A.projectOntoAxis(axis);
+		p2 = B.projectOntoAxis(axis);
 
 		std::pair<bool, double> result = checkOverlap(p1, p2);
 
@@ -84,9 +96,15 @@ std::pair<bool, Vector2f> CollisionDetection::CheckCollisionSAT(const BouncingTh
 
 	//MTV is the Minimum Translation Vector.
 	//we multiply the smallest colliding axis (normalized) by the overlap to get
-	//a vector that will serpate the shapes with smallest magnitude.
-	float magnitude = sqrt((smallest.x * smallest.x) + (smallest.y * smallest.y));
-	smallest /= magnitude;
+	//a vector that will separate the shapes with smallest magnitude.
+	smallest = vectorNormalize(smallest);
+
+	//if already moving away from each other
+	if( (dotProduct(A.getVelocity(), smallest) < 0)
+		&&
+		(dotProduct(B.getVelocity(), smallest) < 0) )
+		return std::make_pair(true, Vector2f(0,0));
+
 	Vector2f mtv = Vector2f(smallest * (float)overlap);
 
 	return std::make_pair(true, mtv);	//YES COLLISION
