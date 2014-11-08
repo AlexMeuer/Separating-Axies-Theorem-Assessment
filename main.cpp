@@ -21,6 +21,7 @@
 #include "SFML/OpenGL.hpp"
 #include <iostream>
 #include <vector>
+#include <thread>
 
 //#include "Circle.h"
 //#include "BouncingThing.h"
@@ -29,6 +30,12 @@
 #include "CollisionDetection.h"
 
 using namespace std;
+
+//-------------------------------------------
+//
+//	See Readme.md for details, known issues, etc.
+//
+// ------------------------------------------
 
 //float euclideanDistance(Vector2f const &A, Vector2f const &B)
 //{
@@ -44,6 +51,147 @@ using namespace std;
 //
 //	return V / magnitude;
 //}
+
+void HandleCollision(BouncingThing * itr, BouncingThing * itr2) {
+	//check if they collide...
+	pair<bool, Vector2f> pair = CollisionDetection::CheckCollisionSAT(*itr, *itr2);
+
+	if( pair.first) {
+		//...do something if they collide
+		itr->setPosition(itr->getPosition() + (pair.second / 2.0f));	//move them apart so they're not intersecting
+		itr2->setPosition(itr2->getPosition() - (pair.second / 2.0f));	//(using the minimum translation vector)
+
+		if( pair.second != Vector2f(0,0) ) {
+
+		//get the components of the velocity vectors which are parallel to the collision
+		float magnitude = sqrtf((pair.second.x * pair.second.x) + (pair.second.y * pair.second.y));
+		Vector2f normMTV(pair.second / magnitude);
+
+		//dot product
+		float aci = (itr->getVelocity().x * normMTV.x) + (itr->getVelocity().y * normMTV.y);
+		float bci = (itr2->getVelocity().x * normMTV.x) + (itr2->getVelocity().y * normMTV.y);
+
+		itr->setVelocity(itr->getVelocity() + (bci - aci) * normMTV);
+		itr2->setVelocity(itr2->getVelocity() + (aci - bci) * normMTV);
+		}
+	}
+
+	//add IDs to appropriate lists so that we don't check for collision again.
+	itr->setCollisionTested(itr2->getID());
+	itr2->setCollisionTested(itr->getID());
+}
+
+void CollisionWindow( bool optimize ) {
+
+	// Create the window
+	RenderWindow window(sf::VideoMode(800, 600, 32), "SAT ASSESMENT | Optimized: " + to_string(optimize));
+	//window.setFramerateLimit(60);
+
+	//load a font
+	sf::Font font;
+	font.loadFromFile("C:\\Windows\\Fonts\\GARA.TTF");
+ 
+	//create a formatted text string
+	sf::Text text;
+	text.setFont(font);
+	text.setStyle(sf::Text::Underlined| sf::Text::Italic | sf::Text::Bold);
+	text.setPosition(5,5);
+	text.setCharacterSize(20);
+
+	//calculate frame rate
+	sf::Clock clock = Clock();
+	float framerate = 0;
+	unsigned long refreshes = 0;
+
+	vector<BouncingThing> bouncingThings;
+	const int maxThings = 20;
+	bouncingThings.reserve(maxThings);
+
+	int id = 0;
+
+	for ( int i = 0; i < maxThings; i++ ) {
+		//create a triangle or square with ranomized parameters
+		if ( i % 2 )
+			bouncingThings.push_back(Triangle(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 10 + 25, id++));
+		else
+			bouncingThings.push_back(Square(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 10 + 25, id++));
+	}
+
+	// Start game loop
+	while (window.isOpen())
+	{
+		// Process events
+		sf::Event Event;
+		while (window.pollEvent(Event))
+		{
+			// Close window : exit
+			if (Event.type == sf::Event::Closed)
+			window.close();
+			// Escape key : exit
+			if ((Event.type == sf::Event::KeyPressed) && (Event.key.code == sf::Keyboard::Escape))
+			window.close();
+		}
+		//prepare frame
+		window.clear();
+ 
+		//draw frame items
+		window.draw(text);
+
+		for(std::vector<BouncingThing>::iterator itr = bouncingThings.begin();
+			itr != bouncingThings.end();
+			itr++)
+		{
+			//collision detection
+			for(std::vector<BouncingThing>::iterator itr2 = bouncingThings.begin();
+				itr2 != bouncingThings.end();
+				itr2++)
+			{
+				if(itr != itr2)	//don't let it check against itself!
+				{
+					if ( optimize ) {
+
+						//If these two object were already tested against each other...
+						if ( itr->wasCollisionTested(itr2->getID())
+								|| itr2->wasCollisionTested(itr->getID()) )
+						{
+								continue;	//...we've already checked these for collision, skip 'em
+						}
+
+					}// end if ( optimize ) {
+
+					if ( optimize ) {
+
+						//check if their bounding circles intersect
+						if(itr->intersectsBoundingCircle(*itr2))
+						{
+							//i know the codes messy. i butchered it last second so that I could show a side-by-side comparison
+							HandleCollision(&*itr, &*itr2);
+						}
+
+					}
+					else {
+						HandleCollision(&*itr, &*itr);
+					}// end if ( optimize ) {
+
+				}//if(itr!=itr2)
+			}//itr2 loop
+
+			//update and draw each thing
+			itr->Update(window);
+			itr->Draw(window);
+		}//itr loop
+
+		//calculate framerate
+		refreshes++;
+		framerate += 1.f / clock.getElapsedTime().asSeconds();
+		text.setString("Framerate: " + to_string(framerate / refreshes));
+		clock.restart();
+
+		// Finally, display rendered frame on screen
+		window.display();
+
+	} //loop back for next frame
+}
  
  
 ////////////////////////////////////////////////////////////
@@ -53,6 +201,25 @@ using namespace std;
 int main()
 {
 	srand(time(NULL));	//seed the random gen
+
+	// TL;DR
+	// -----
+	// I made two windows (each has the code that is below),
+	// and each one runs on it's own thread.
+	// Reason: side-by-side comparison
+
+	//Threads
+	thread optimized = thread(CollisionWindow, true);
+	thread non_optimized = thread(CollisionWindow, false);
+
+	cout << "There are two windows!\nDrag the top one to reveal." << endl;
+
+	optimized.join();
+	non_optimized.join();
+
+	return EXIT_SUCCESS;
+
+	//Original code:
 
 	// Create the main window
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
@@ -65,19 +232,18 @@ int main()
 	//create a formatted text string
 	sf::Text text;
 	text.setFont(font);
-	text.setString("Assessment 1");
 	text.setStyle(sf::Text::Underlined| sf::Text::Italic | sf::Text::Bold);
 	text.setPosition(5,5);
 	text.setCharacterSize(20);
 
 	//calculate frame rate
-	sf::Clock clock;
-	clock.restart();
-	float framerate;
+	sf::Clock clock = Clock();
+	float framerate = 0;
+	unsigned long refreshes = 0;
 
 	//create a circle
-	/*sf::CircleShape circle(50);
-	circle.setPosition(300,200);*/
+	//*sf::CircleShape circle(50);
+	//circle.setPosition(300,200);*/
 	//Circle circle(window);
 	//std::vector<Circle> circles = std::vector<Circle>();
 	//const int max_circles = 20;
@@ -130,10 +296,6 @@ int main()
 		}
 		//prepare frame
 		window.clear();
-
-		//calculate framerate
-		framerate = 1.f / clock.getElapsedTime().asSeconds();
-		clock.restart();
  
 		//draw frame items
 		window.draw(text);
@@ -196,10 +358,11 @@ int main()
 						//check whether we've already tested collision between itr and itr2
 						//bool alreadyChecked = false;
 
+						//Collision doesnt seem to work if I uncomment this. Objects pass through each other.
 						//if ( itr->wasCollisionTested(itr2->getID())
 						//	|| itr2->wasCollisionTested(itr->getID()) )
 						//{
-							//alreadyChecked = true;
+						//	//alreadyChecked = true;
 						//	continue;	//we've already checked these for collision, skip 'em
 						//}
 						//if we've already done collision check, don't check again.
@@ -248,7 +411,11 @@ int main()
 		//tryHard.Update(window);
 		//tryHard.Draw(window);
 
-
+		//calculate framerate
+		refreshes++;
+		framerate += 1.f / clock.getElapsedTime().asSeconds();
+		text.setString("Framerate: " + to_string(framerate / refreshes));
+		clock.restart();
 
 		// Finally, display rendered frame on screen
 		window.display();
