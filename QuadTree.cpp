@@ -6,7 +6,6 @@ QuadTree::QuadTree(RenderWindow* w) : m_windowSize(w->getSize()), m_ChildrenPerN
 }
 
 void QuadTree::addThing(const BouncingThing* thing) {
-	Node* node = m_root;
 
 }
 

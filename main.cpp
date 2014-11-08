@@ -97,13 +97,16 @@ int main()
 	int id = 0;
 
 	for ( int i = 0; i < maxThings; i++ ) {
+
 		//create a bouncing thing with randomized parameters
 		//bouncingThings.push_back(BouncingThing(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, rand() % 5 + 3, id++));
 		//bouncingThings.push_back(BouncingThing(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 15 + 15, 100, id++));
+		
+		//create a triangle or square with ranomized parameters
 		if ( i % 2 )
-			bouncingThings.push_back(Triangle(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, id++));
+			bouncingThings.push_back(Triangle(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 10 + 25, id++));
 		else
-			bouncingThings.push_back(Square(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), 30, id++));
+			bouncingThings.push_back(Square(Vector2f(rand() % window.getSize().x, rand() % window.getSize().y), rand() % 10 + 25, id++));
 	}
 	//vector<Vector2f> myVec;
 	//myVec.push_back(Vector2f(15,15));
