@@ -21,6 +21,11 @@ However, _Visual Studio Performance Analysis_ shows that the collision detection
 Derived Classes _(not an actual issue)_
 --------------
 + _TL;DR_ Triangle and Square are redundant. Base class OP.
-+ Also, although _Triangle_ and _Square_ objects have their own classes, the _BouncingThing_ class (the base class)
++ Although _Triangle_ and _Square_ objects have their own classes, the _BouncingThing_ class (the base class)
 will happily take any number of points (and a radius) and give you a convex shape based on that, which __will__ work with
 the collision detection.
+
+About those QuadTree files...
+==============
+I did not have time to implement a quadtree and try to fix the glitchy-ness of my SAT algorithms.
+(The files aren't implemented)
