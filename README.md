@@ -2,7 +2,7 @@ SAT Assessment
 ==============
 
 ###### The results are in!
-![Result: 93%](https://github.com/Not0nFire/Graphics-Lab-1/SAT_result.png "SAT Result: 93%")
+![Result: 93%](https://github.com/Not0nFire/Graphics-Lab-1/blob/master/SAT_result.png "SAT Result: 93%")
 
 
 Program uses multi-threading to showcase a side-by-side comparison of the __SAT Collision Detection__
